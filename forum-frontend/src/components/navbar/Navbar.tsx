@@ -5,8 +5,12 @@ import api from '../../lib/api';
 import classes from './Navbar.module.css';
 import logo from './FF.png';
 
+interface User {
+    username: string;
+}
+
 export function Navbar() {
-    const [user, setUser] = useState(null);
+    const [user, setUser] = useState<User | null>(null);
     const [loading, setLoading] = useState(true);
 
     useEffect(() => {
@@ -16,7 +20,7 @@ export function Navbar() {
     const checkAuth = async () => {
         try {
             const response = await api.get('/me');
-            setUser(response.data);
+            setUser(response.data.user);
         } catch (error) {
             setUser(null);
         } finally {
@@ -50,7 +54,7 @@ export function Navbar() {
                             </Menu.Target>
 
                             <Menu.Dropdown>
-                                <Menu.Label>{user.email || user.username}</Menu.Label>
+                                <Menu.Label>{user.username}</Menu.Label>
                                 <Menu.Item
                                     leftSection={<IconLogout size={14} />}
                                     onClick={handleLogout}
@@ -61,8 +65,12 @@ export function Navbar() {
                         </Menu>
                     ) : (
                         <>
-                            <Button variant="default">Login</Button>
-                            <Button>Registrieren</Button>
+                            <Button variant="default" component="a" href="/login">
+                                Login
+                            </Button>
+                            <Button component="a" href="/register">
+                                Registrieren
+                            </Button>
                         </>
                     )}
                 </Group>

@@ -5,7 +5,8 @@ const api = axios.create({
     headers: {
         'Content-Type': 'application/json',
         'Accept': 'application/json'
-    }
+    },
+    withCredentials: true // Damit werden Cookies bei Anfragen mitgesendet
 });
 
 export default api;
