@@ -1,6 +1,7 @@
 import { useState } from 'react';
 import api from './lib/api';
 import { Button, Container, Title, Text, Card, Group, Code, PasswordInput } from '@mantine/core';
+import { Navbar } from './components/navbar/Navbar';
 
 function App() {
     const [status, setStatus] = useState('Nicht geprüft');
@@ -22,34 +23,37 @@ function App() {
     };
 
     return (
-        <Container size="sm" mt="xl">
-            <Card shadow="sm" padding="lg" radius="md" withBorder>
-                <Title order={2} mb="md">
-                    Forum Frontend
-                </Title>
-                <Text c="dimmed" mb="lg">
-                    Dies ist ein Test mit React, Vite und Mantine UI.
-                </Text>
+        <>
+            <Navbar />
+            <Container size="sm" mt="xl">
+                <Card shadow="sm" padding="lg" radius="md" withBorder>
+                    <Title order={2} mb="md">
+                        Forum Frontend
+                    </Title>
+                    <Text c="dimmed" mb="lg">
+                        Dies ist ein Test mit React, Vite und Mantine UI.
+                    </Text>
 
-                <PasswordInput
-                    label="Input label"
-                    description="Input description"
-                    placeholder="Input placeholder"
-                />
+                    <PasswordInput
+                        label="Input label"
+                        description="Input description"
+                        placeholder="Input placeholder"
+                    />
 
-                <Group justify="center" mb="md">
-                    <Button onClick={checkBackend} loading={loading} fullWidth>
-                        Backend Status prüfen
-                    </Button>
-                </Group>
+                    <Group justify="center" mb="md">
+                        <Button onClick={checkBackend} loading={loading} fullWidth>
+                            Backend Status prüfen
+                        </Button>
+                    </Group>
 
-                {status !== 'Nicht geprüft' && (
-                    <Code block color={status.startsWith('Fehler') ? 'red' : 'green'}>
-                        {status}
-                    </Code>
-                )}
-            </Card>
-        </Container>
+                    {status !== 'Nicht geprüft' && (
+                        <Code block color={status.startsWith('Fehler') ? 'red' : 'green'}>
+                            {status}
+                        </Code>
+                    )}
+                </Card>
+            </Container>
+        </>
     );
 }
 
