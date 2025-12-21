@@ -14,13 +14,16 @@ import {
 } from '@mantine/core';
 import { IconAlertCircle } from '@tabler/icons-react';
 import api from '../lib/api';
+import { useAuth } from '../context/AuthContext';
 
 export function Login() {
     const [username, setUsername] = useState('');
     const [password, setPassword] = useState('');
     const [loading, setLoading] = useState(false);
     const [error, setError] = useState('');
+
     const navigate = useNavigate();
+    const { login } = useAuth();
 
     const handleSubmit = async (e) => {
         e.preventDefault();
@@ -28,20 +31,10 @@ export function Login() {
         setError('');
 
         try {
-            const response = await api.post('/login', {
-                username,
-                password
-            });
-
-            if (response.data.token) {
-                // Redirect to home page after successful login
-                window.location.href = '/';
-            }
-        } catch (err) {
-            setError(
-                err.response?.data?.error || 
-                'Login fehlgeschlagen. Bitte überprüfen Sie Ihre Anmeldedaten.'
-            );
+            await login({ username, password });
+            navigate('/');
+        } catch {
+            setError('Login fehlgeschlagen. Bitte überprüfen Sie Ihre Anmeldedaten.');
         } finally {
             setLoading(false);
         }
@@ -83,13 +76,7 @@ export function Login() {
                             size="md"
                         />
 
-                        <Button
-                            type="submit"
-                            fullWidth
-                            size="md"
-                            loading={loading}
-                            mt="md"
-                        >
+                        <Button type="submit" fullWidth size="md" loading={loading} mt="md">
                             Anmelden
                         </Button>
 

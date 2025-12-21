@@ -1,51 +1,23 @@
-import { useEffect, useState } from 'react';
 import { Group, Button, Avatar, Menu } from '@mantine/core';
 import { IconUser, IconLogout } from '@tabler/icons-react';
-import api from '../../lib/api';
 import classes from './Navbar.module.css';
 import logo from './FF.png';
-
-interface User {
-    username: string;
-}
+import { useAuth } from '../../context/AuthContext';
+import { useNavigate } from 'react-router-dom';
 
 export function Navbar() {
-    const [user, setUser] = useState<User | null>(null);
-    const [loading, setLoading] = useState(true);
-
-    useEffect(() => {
-        checkAuth();
-    }, []);
-
-    const checkAuth = async () => {
-        try {
-            const response = await api.get('/me');
-            setUser(response.data.user);
-        } catch (error) {
-            setUser(null);
-        } finally {
-            setLoading(false);
-        }
-    };
-
-    const handleLogout = async () => {
-        try {
-            await api.post('/logout');
-            setUser(null);
-        } catch (error) {
-            console.error('Logout failed:', error);
-        }
-    };
+    const navigate = useNavigate();
+    const { user, isLoading, logout } = useAuth();
 
     return (
         <header className={classes.header}>
             <Group h="100%" px="md" justify="space-between">
-                <Group>
+                <Group onClick={() => navigate('/')} style={{ cursor: 'pointer' }}>
                     <img src={logo} alt="Forum Logo" style={{ height: '40px' }} />
                 </Group>
 
                 <Group>
-                    {loading ? null : user ? (
+                    {isLoading ? null : user ? (
                         <Menu shadow="md" width={200}>
                             <Menu.Target>
                                 <Avatar style={{ cursor: 'pointer' }} color="blue" radius="xl">
@@ -55,20 +27,21 @@ export function Navbar() {
 
                             <Menu.Dropdown>
                                 <Menu.Label>{user.username}</Menu.Label>
-                                <Menu.Item
-                                    leftSection={<IconLogout size={14} />}
-                                    onClick={handleLogout}
-                                >
+                                <Menu.Item leftSection={<IconLogout size={14} />} onClick={logout}>
                                     Logout
                                 </Menu.Item>
                             </Menu.Dropdown>
                         </Menu>
                     ) : (
                         <>
-                            <Button variant="default" component="a" href="/login">
+                            <Button
+                                variant="default"
+                                component="a"
+                                onClick={() => navigate('/login')}
+                            >
                                 Login
                             </Button>
-                            <Button component="a" href="/register">
+                            <Button component="a" onClick={() => navigate('/register')}>
                                 Registrieren
                             </Button>
                         </>

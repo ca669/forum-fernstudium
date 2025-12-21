@@ -52,4 +52,7 @@ $app->get('/api/status', function (Request $request, Response $response) {
 $authRoutes = require __DIR__ . '/../routes/auth.php';
 $authRoutes($app, $pdo);
 
+$blogRoutes = require __DIR__ . '/../routes/blog.php';
+$blogRoutes($app, $pdo);
+
 $app->run();
