@@ -18,6 +18,9 @@ try {
     die("DB connection failed: " . $e->getMessage());
 }
 
+// Globalen JWT_SECRET definieren
+define('JWT_SECRET', $_ENV['JWT_SECRET'] ?? 'SECRET_KEY_DEV');
+
 // App Instanz erstellen
 $app = AppFactory::create();
 

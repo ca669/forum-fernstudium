@@ -1,10 +1,11 @@
 import { useState, useEffect } from 'react';
 import api from '../lib/api';
 import { Container, Title, Text, Loader, Alert, Button, SimpleGrid, Box } from '@mantine/core';
-import { PostCard } from '../components/post-card/PostCard';
+import { PostCard } from '../components/PostCard/PostCard';
 import { IconAlertCircle, IconPlus } from '@tabler/icons-react';
 import { Post } from '../types/Blog';
 import { useAuth } from '../context/AuthContext';
+import { useNavigate } from 'react-router-dom';
 
 export function Home() {
     const [loading, setLoading] = useState(true);
@@ -12,6 +13,7 @@ export function Home() {
     const [posts, setPosts] = useState<Post[]>([]);
 
     const { user } = useAuth();
+    const navigate = useNavigate();
 
     const fetchPosts = async () => {
         setLoading(true);
@@ -65,7 +67,7 @@ export function Home() {
                         <Button
                             leftSection={<IconPlus size={16} />}
                             component="a"
-                            href="/create-post"
+                            onClick={() => navigate('/create-post')}
                         >
                             Neuer Beitrag
                         </Button>

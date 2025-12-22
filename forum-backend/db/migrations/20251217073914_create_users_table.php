@@ -8,15 +8,15 @@ final class CreateUsersTable extends AbstractMigration
 {
     public function change(): void
     {
-        // 1. Tabelle 'users'
+        // Tabelle für die Benutzer erstellen
         $users = $this->table('users');
         $users->addColumn('username', 'string', ['limit' => 255])
-              ->addColumn('password', 'string', ['limit' => 255]) // Platz für Hash
+              ->addColumn('password', 'string', ['limit' => 255])
               ->addColumn('role', 'string', ['limit' => 50, 'default' => 'user']) // [user, mod, admin]
               ->addColumn('createdAt', 'timestamp', ['default' => 'CURRENT_TIMESTAMP'])
               ->create();
 
-        // 2. Tabelle 'posts'
+        // Tabelle für die Blog-Posts erstellen
         $posts = $this->table('posts');
         $posts->addColumn('title', 'string', ['limit' => 255])
               ->addColumn('body', 'text')
@@ -30,7 +30,7 @@ final class CreateUsersTable extends AbstractMigration
               ])
               ->create();
 
-        // 3. Tabelle 'comments'
+        // Tabelle für die Kommentare erstellen
         $comments = $this->table('comments');
         $comments->addColumn('text', 'text')
               ->addColumn('postId', 'integer', ['signed' => true])

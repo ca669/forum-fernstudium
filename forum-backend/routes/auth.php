@@ -69,9 +69,7 @@ return function ($app, $pdo) {
             return $response->withStatus(401)->withHeader('Content-Type', 'application/json');
         }
 
-        // JWT Token bauen
-        $secretKey = $_ENV['JWT_SECRET'] ?? 'default_secret_dev_only';
-
+        // JWT Token erstellen
         $payload = [
             'iss'  => 'http://localhost',
             'sub'  => $user['id'],
@@ -80,7 +78,7 @@ return function ($app, $pdo) {
             'exp'  => time() + 3600 * 24,
         ];
 
-        $jwt = JWT::encode($payload, $secretKey, 'HS256');
+        $jwt = JWT::encode($payload, JWT_SECRET, 'HS256');
 
         // Cookie setzen (Sicherheits-Upgrade)
         // HttpOnly: JS kann nicht zugreifen (Schutz vor XSS)
@@ -116,10 +114,11 @@ return function ($app, $pdo) {
         }
 
         try {
-            $secretKey = $_ENV['JWT_SECRET'] ?? 'default_secret_dev_only';
+            // Debug: Log JWT_SECRET
+            error_log('JWT_SECRET: ' . JWT_SECRET);
 
             // Token validieren
-            $decoded = JWT::decode($token, new Key($secretKey, 'HS256'));
+            $decoded = JWT::decode($token, new Key(JWT_SECRET, 'HS256'));
 
             // User aus der DB holen
             $user = $fpdo->from('users')->where('id', $decoded->sub)->select('id, username, role')->fetch();
