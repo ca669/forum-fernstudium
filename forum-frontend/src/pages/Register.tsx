@@ -1,5 +1,5 @@
 import { useState } from 'react';
-import { useNavigate } from 'react-router-dom';
+import { Link, useNavigate } from 'react-router-dom';
 import {
     Container,
     Card,
@@ -112,7 +112,7 @@ export function Register() {
 
                         <Text c="dimmed" size="sm" ta="center" mt="md">
                             Bereits ein Konto?{' '}
-                            <Anchor href="/login" size="sm">
+                            <Anchor component={Link} to="/login" size="sm">
                                 Jetzt anmelden
                             </Anchor>
                         </Text>

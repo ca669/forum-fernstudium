@@ -2,6 +2,7 @@ services:
   # BACKEND (PHP Slim)
   api:
     build: ./forum-backend
+    container_name: forum-api
     ports:
       - "8000:8080"
     environment:
@@ -10,11 +11,21 @@ services:
       # Wir mounten den Ordner 'var' nach außen, damit die SQLite-DB persistent bleibt.
       # Host-Path muss ggf. auf Zielsystem angepasst werden.
       - ./forum-backend/var:/var/www/html/var
+    networks:
+      - forum-network
 
-  # FRONTEND (React)
+  # FRONTEND (React + Nginx)
   web:
-    build: ./forum-frontend
+    build:
+      context: ./forum-frontend
+    container_name: forum-web
     ports:
       - "80:80"
     depends_on:
       - api
+    networks:
+      - forum-network
+
+networks:
+  forum-network:
+    driver: bridge

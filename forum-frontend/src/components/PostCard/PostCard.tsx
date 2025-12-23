@@ -1,30 +1,74 @@
 import { Post } from '../../types/Blog';
-import { Card, Text, Badge, Button, Group, Avatar, ActionIcon, Center } from '@mantine/core';
-import { IconBookmark, IconShare, IconArticle } from '@tabler/icons-react';
-import { useNavigate } from 'react-router-dom';
+import {
+    Card,
+    Text,
+    Badge,
+    Button,
+    Group,
+    Avatar,
+    ActionIcon,
+    Center,
+    Tooltip
+} from '@mantine/core';
+import { IconCopy, IconArticle, IconCheck, IconTrash, IconUpload } from '@tabler/icons-react';
+import { Link } from 'react-router-dom';
+import { getStudyProgramTheme, getMantineColorVar } from '../../lib/studyProgramTheme';
+import { useState } from 'react';
+import { useAuth } from '../../context/AuthContext';
+import api from '../../lib/api';
 
-// Themenfarben für verschiedene Studiengänge
-const programTheme: Record<string, { bg: string; icon: string }> = {
-    Informatik: { bg: 'blue.1', icon: 'blue.6' },
-    Linguistik: { bg: 'cyan.1', icon: 'cyan.6' },
-    BWL: { bg: 'green.1', icon: 'green.6' },
-    Psychologie: { bg: 'grape.1', icon: 'grape.6' },
-    'Soziale Arbeit': { bg: 'orange.1', icon: 'orange.6' },
-    Physik: { bg: 'teal.1', icon: 'teal.6' },
-    default: { bg: 'gray.1', icon: 'gray.6' }
-};
+export function PostCard({
+    post,
+    isMyPostView,
+    onUpdate
+}: {
+    post: Post;
+    isMyPostView?: boolean;
+    onUpdate?: () => void;
+}) {
+    const [copiedSuccessfully, setCopiedSuccessfully] = useState(false);
 
-export function PostCard({ post }: { post: Post }) {
-    const navigate = useNavigate();
+    const { user } = useAuth();
 
     // Initiale für Avatar generieren
     const authorInitial = post.author?.charAt(0).toUpperCase() || '?';
 
-    // Farbe basierend auf dem Studiengang auswählen, ansonsten Standardfarbe
-    const theme = programTheme[post.studyProgram || ''] || programTheme['default'];
+    // Farbe basierend auf dem Studiengang auswählen
+    const theme = getStudyProgramTheme(post.studyProgram);
 
     // Farbe für das Icon
-    const iconColorVar = `var(--mantine-color-${theme.icon.replace('.', '-')})`;
+    const iconColorVar = getMantineColorVar(theme.icon);
+
+    const copyToClipboard = () => {
+        const postUrl = `${window.location.origin}/posts/${post.id}`;
+        navigator.clipboard.writeText(postUrl);
+        setCopiedSuccessfully(true);
+        setTimeout(() => setCopiedSuccessfully(false), 2000);
+    };
+
+    const onPublishClick = async () => {
+        try {
+            await api.put(`/posts/${post.id}/publish`);
+            // Nach erfolgreicher Veröffentlichung: Parent benachrichtigen
+            onUpdate?.();
+        } catch (err) {
+            console.error('Fehler beim Veröffentlichen des Beitrags:', err);
+        }
+    };
+
+    const onDeletePost = async () => {
+        if (!window.confirm(`Möchten Sie den Beitrag "${post.title}" wirklich löschen?`)) {
+            return;
+        }
+
+        try {
+            await api.delete(`/posts/${post.id}`);
+            // Nach erfolgreichem Löschen: Parent benachrichtigen
+            onUpdate?.();
+        } catch (err) {
+            console.error('Fehler beim Löschen des Beitrags:', err);
+        }
+    };
 
     return (
         <Card shadow="sm" padding="lg" radius="md" withBorder>
@@ -34,6 +78,12 @@ export function PostCard({ post }: { post: Post }) {
                     {/* 2. Dynamische Icon-Farbe */}
                     <IconArticle size={48} stroke={1.5} color={iconColorVar} />
                 </Center>
+                {/* Status Badge */}
+                {post.status === 'draft' && (
+                    <Badge color="red" variant="light" pos="absolute" top={10} right={10}>
+                        Entwurf
+                    </Badge>
+                )}
             </Card.Section>
 
             {/* Meta Header: Autor und Kategorie/Datum */}
@@ -70,16 +120,45 @@ export function PostCard({ post }: { post: Post }) {
                     radius="md"
                     variant="light"
                     style={{ flex: 1 }}
-                    onClick={() => navigate(`/posts/${post.id}`)}
+                    component={Link}
+                    to={`/posts/${post.id}?returnUrl=${isMyPostView ? '/my-posts' : '/'}`}
                 >
-                    Weiterlesen
+                    Lesen
                 </Button>
-                <ActionIcon variant="default" radius="md" size={36}>
-                    <IconBookmark size={18} stroke={1.5} />
-                </ActionIcon>
-                <ActionIcon variant="default" radius="md" size={36}>
-                    <IconShare size={18} stroke={1.5} />
-                </ActionIcon>
+                <Tooltip label="Kopieren">
+                    <ActionIcon variant="default" radius="md" size={36} onClick={copyToClipboard}>
+                        {copiedSuccessfully ? (
+                            <IconCheck size={18} stroke={1.5} color="green" />
+                        ) : (
+                            <IconCopy size={18} stroke={1.5} />
+                        )}
+                    </ActionIcon>
+                </Tooltip>
+                {post.status === 'draft' && (
+                    <Tooltip label="Veröffentlichen">
+                        <ActionIcon
+                            variant="default"
+                            radius="md"
+                            size={36}
+                            onClick={onPublishClick}
+                        >
+                            <IconUpload size={18} stroke={1.5} />
+                        </ActionIcon>
+                    </Tooltip>
+                )}
+                {user && (user?.role !== 'user' || isMyPostView) && (
+                    <Tooltip label="Löschen">
+                        <ActionIcon
+                            radius="md"
+                            variant="filled"
+                            color="red"
+                            size={36}
+                            onClick={onDeletePost}
+                        >
+                            <IconTrash size={18} stroke={1.5} />
+                        </ActionIcon>
+                    </Tooltip>
+                )}
             </Group>
         </Card>
     );

@@ -1,5 +1,5 @@
 import { useEffect, useState } from 'react';
-import { useParams, useNavigate } from 'react-router-dom';
+import { useParams, useSearchParams, Link } from 'react-router-dom';
 import {
     Container,
     Title,
@@ -13,61 +13,117 @@ import {
     Stack,
     ActionIcon,
     Alert,
-    Paper
+    Paper,
+    Divider,
+    Textarea,
+    Card,
+    Tooltip
 } from '@mantine/core';
 import {
     IconArrowLeft,
     IconArticle,
     IconAlertCircle,
-    IconShare,
-    IconBookmark
+    IconMessage,
+    IconSend,
+    IconTrash
 } from '@tabler/icons-react';
 import api from '../lib/api';
-import { Post } from '../types/Blog';
-
-// Wir nutzen das gleiche Farbschema wie in der PostCard
-// (Tipp: In Zukunft könnte man das in eine `src/lib/theme.ts` auslagern)
-const programTheme: Record<string, { bg: string; icon: string }> = {
-    Informatik: { bg: 'blue.1', icon: 'blue.6' },
-    Linguistik: { bg: 'cyan.1', icon: 'cyan.6' },
-    BWL: { bg: 'green.1', icon: 'green.6' },
-    Psychologie: { bg: 'grape.1', icon: 'grape.6' },
-    'Soziale Arbeit': { bg: 'orange.1', icon: 'orange.6' },
-    Physik: { bg: 'teal.1', icon: 'teal.6' },
-    default: { bg: 'gray.1', icon: 'gray.6' }
-};
+import { NewComment, PostDetailed } from '../types/Blog';
+import { isAxiosError } from 'axios';
+import { studyProgramThemes } from '../lib/studyProgramTheme';
+import { useAuth } from '../context/AuthContext';
 
 export function PostDetail() {
     const { id } = useParams();
-    const navigate = useNavigate();
+    const { user } = useAuth();
 
-    const [post, setPost] = useState<Post | null>(null);
-    const [loading, setLoading] = useState(true);
+    const [post, setPost] = useState<PostDetailed | null>(null);
+    const [isLoading, setIsLoading] = useState(true);
     const [error, setError] = useState<string | null>(null);
 
+    const [commentBody, setCommentBody] = useState('');
+    const [submittingComment, setSubmittingComment] = useState(false);
+
+    const [searchParams] = useSearchParams();
+    const returnUrl = searchParams.get('returnUrl') || '/';
+
     useEffect(() => {
+        const controller = new AbortController();
+
         const fetchPost = async () => {
             if (!id) return;
 
-            setLoading(true);
+            setIsLoading(true);
             setError(null);
 
             try {
-                // Wir holen den einzelnen Post anhand der ID
-                const response = await api.get(`/posts/${id}`);
+                const response = await api.get(`/posts/${id}`, {
+                    signal: controller.signal
+                });
                 setPost(response.data);
             } catch (err) {
+                if (isAxiosError(err) && err.name === 'CanceledError') {
+                    return;
+                }
                 console.error('Fehler beim Laden des Beitrags:', err);
                 setError('Der Beitrag konnte nicht geladen werden.');
             } finally {
-                setLoading(false);
+                if (!controller.signal.aborted) {
+                    setIsLoading(false);
+                }
             }
         };
 
         fetchPost();
+
+        return () => {
+            controller.abort();
+        };
     }, [id]);
 
-    if (loading) {
+    const onCommentSubmit = async () => {
+        if (!commentBody.trim() || !id) {
+            return;
+        }
+
+        setSubmittingComment(true);
+        try {
+            const body: NewComment = { text: commentBody };
+
+            await api.post(`/posts/${id}/comments`, body);
+            // Post neu laden um den neuen Kommentar anzuzeigen
+            const response = await api.get(`/posts/${id}`);
+            setPost(response.data);
+
+            // Formular zurücksetzen
+            setCommentBody('');
+        } catch (err) {
+            console.error('Fehler beim Senden des Kommentars:', err);
+            // Hier könnte man noch einen Toast/Notification anzeigen
+        } finally {
+            setSubmittingComment(false);
+        }
+    };
+
+    const onDeleteComment = async (commentId: number) => {
+        if (!id) {
+            return;
+        }
+
+        if (!window.confirm(`Möchten Sie den Kommentar wirklich löschen?`)) {
+            return;
+        }
+
+        try {
+            await api.delete(`/comments/${commentId}`);
+            const response = await api.get(`/posts/${id}`);
+            setPost(response.data);
+        } catch (err) {
+            console.error('Fehler beim Löschen des Kommentars:', err);
+        }
+    };
+
+    if (isLoading) {
         return (
             <Container py="xl" h="50vh">
                 <Center h="100%">
@@ -83,11 +139,7 @@ export function PostDetail() {
                 <Alert icon={<IconAlertCircle size={16} />} title="Fehler" color="red" mb="md">
                     {error || 'Beitrag nicht gefunden.'}
                 </Alert>
-                <Button
-                    leftSection={<IconArrowLeft size={16} />}
-                    variant="subtle"
-                    onClick={() => navigate('/')}
-                >
+                <Button leftSection={<IconArrowLeft size={16} />} component={Link} to="/">
                     Zurück zur Übersicht
                 </Button>
             </Container>
@@ -95,9 +147,12 @@ export function PostDetail() {
     }
 
     // Theme ermitteln
-    const theme = programTheme[post.studyProgram || ''] || programTheme['default'];
+    const theme = studyProgramThemes[post.studyProgram || ''] || studyProgramThemes['default'];
     const iconColorVar = `var(--mantine-color-${theme.icon.replace('.', '-')})`;
     const authorInitial = post.author?.charAt(0).toUpperCase() || '?';
+
+    // Datum normalisieren (nutzt createdAt vom Interface oder created_at als Fallback)
+    const postDate = post.createdAt || post.createdAt || Date.now();
 
     return (
         <Container size="md" py="xl">
@@ -107,73 +162,148 @@ export function PostDetail() {
                 color="gray"
                 mb="md"
                 leftSection={<IconArrowLeft size={16} />}
-                onClick={() => navigate('/')}
+                component={Link}
+                to={returnUrl}
             >
                 Zurück
             </Button>
 
-            <Paper shadow="sm" radius="md" withBorder style={{ overflow: 'hidden' }}>
-                {/* 1. Großer Header-Bereich mit Themenfarbe */}
-                <div
-                    style={{
-                        backgroundColor: `var(--mantine-color-${theme.bg.replace('.', '-')})`,
-                        height: '200px',
-                        display: 'flex',
-                        alignItems: 'center',
-                        justifyContent: 'center'
-                    }}
-                >
-                    <IconArticle size={80} stroke={1} color={iconColorVar} />
-                </div>
+            <Stack gap="xl">
+                {/* Artikel Ansicht */}
+                <Paper shadow="sm" radius="md" withBorder style={{ overflow: 'hidden' }}>
+                    <div
+                        style={{
+                            backgroundColor: `var(--mantine-color-${theme.bg.replace('.', '-')})`,
+                            height: '200px',
+                            display: 'flex',
+                            alignItems: 'center',
+                            justifyContent: 'center'
+                        }}
+                    >
+                        <IconArticle size={80} stroke={1} color={iconColorVar} />
+                    </div>
 
-                <Stack p={{ base: 'md', md: 'xl' }} gap="lg">
-                    {/* 2. Meta-Informationen */}
-                    <Group justify="space-between" align="start">
-                        <Group>
-                            <Avatar color="blue" radius="xl" size="md">
-                                {authorInitial}
-                            </Avatar>
-                            <div>
-                                <Text size="sm" fw={500}>
-                                    {post.author}
-                                </Text>
-                                <Text size="xs" c="dimmed">
-                                    Veröffentlicht am{' '}
-                                    {new Date(post.createdAt || Date.now()).toLocaleDateString(
-                                        'de-DE'
-                                    )}
-                                </Text>
-                            </div>
+                    <Stack p={{ base: 'md', md: 'xl' }} gap="lg">
+                        <Group justify="space-between" align="start">
+                            <Group>
+                                <Avatar color="blue" radius="xl" size="md">
+                                    {authorInitial}
+                                </Avatar>
+                                <div>
+                                    <Text size="sm" fw={500}>
+                                        {post.author}
+                                    </Text>
+                                    <Text size="xs" c="dimmed">
+                                        Veröffentlicht am{' '}
+                                        {new Date(postDate).toLocaleDateString('de-DE')}
+                                    </Text>
+                                </div>
+                            </Group>
+
+                            <Group>
+                                <Badge color={theme.icon.split('.')[0]} size="lg" variant="light">
+                                    {post.studyProgram || 'Allgemein'}
+                                </Badge>
+                            </Group>
                         </Group>
 
-                        <Group>
-                            <ActionIcon variant="light" color="gray" size="lg" radius="md">
-                                <IconBookmark size={20} stroke={1.5} />
-                            </ActionIcon>
-                            <ActionIcon variant="light" color="gray" size="lg" radius="md">
-                                <IconShare size={20} stroke={1.5} />
-                            </ActionIcon>
-                            <Badge color={theme.icon.split('.')[0]} size="lg" variant="light">
-                                {post.studyProgram || 'Allgemein'}
-                            </Badge>
-                        </Group>
+                        <div>
+                            <Title order={1} mb="md" style={{ lineHeight: 1.3 }}>
+                                {post.title}
+                            </Title>
+                            <Text size="lg" style={{ lineHeight: 1.6, whiteSpace: 'pre-wrap' }}>
+                                {post.body}
+                            </Text>
+                        </div>
+                    </Stack>
+                </Paper>
+
+                {/* Kommentarsektion */}
+                <Stack gap="md">
+                    <Group>
+                        <IconMessage size={24} />
+                        <Title order={3}>Kommentare ({post.comments?.length || 0})</Title>
                     </Group>
 
-                    {/* 3. Titel und Inhalt */}
-                    <div>
-                        <Title order={1} mb="md" style={{ lineHeight: 1.3 }}>
-                            {post.title}
-                        </Title>
+                    <Divider />
 
-                        {/* whiteSpace: 'pre-wrap' sorgt dafür, dass Zeilenumbrüche 
-                           aus der Datenbank erhalten bleiben 
-                        */}
-                        <Text size="lg" style={{ lineHeight: 1.6, whiteSpace: 'pre-wrap' }}>
-                            {post.body}
+                    {/* Liste der Kommentare */}
+                    {post.comments && post.comments.length > 0 ? (
+                        <Stack gap="md">
+                            {post.comments.map((comment) => (
+                                <Card
+                                    key={comment.id}
+                                    withBorder
+                                    radius="md"
+                                    padding="md"
+                                    bg="gray.0"
+                                >
+                                    <Group mb="xs">
+                                        <Avatar size="sm" radius="xl" color="blue">
+                                            {comment.author?.charAt(0).toUpperCase() || '?'}
+                                        </Avatar>
+                                        <div>
+                                            <Text size="sm" fw={500}>
+                                                {comment.author}
+                                            </Text>
+                                            <Text size="xs" c="dimmed">
+                                                {new Date(comment.createdAt).toLocaleDateString(
+                                                    'de-DE'
+                                                )}
+                                            </Text>
+                                        </div>
+                                        {user &&
+                                            (user.role !== 'user' ||
+                                                user.username === comment.author) && (
+                                                <Tooltip label="Löschen">
+                                                    <ActionIcon
+                                                        ml="auto"
+                                                        size="sm"
+                                                        variant="transparent"
+                                                        color="red"
+                                                        onClick={() => onDeleteComment(comment.id)}
+                                                    >
+                                                        <IconTrash size={16} stroke={1.5} />
+                                                    </ActionIcon>
+                                                </Tooltip>
+                                            )}
+                                    </Group>
+                                    <Text size="sm">{comment.text}</Text>
+                                </Card>
+                            ))}
+                        </Stack>
+                    ) : (
+                        <Text c="dimmed" fs="italic">
+                            Noch keine Kommentare vorhanden.
                         </Text>
-                    </div>
+                    )}
+
+                    {/* Neuer Kommentar Formular (auch für Gäste) */}
+                    <Paper withBorder radius="md" p="md" mt="md">
+                        <Title order={4} mb="md">
+                            Kommentar schreiben
+                        </Title>
+                        <Stack gap="sm">
+                            <Textarea
+                                placeholder="Was denkst du darüber?"
+                                minRows={3}
+                                value={commentBody}
+                                onChange={(e) => setCommentBody(e.currentTarget.value)}
+                            />
+                            <Group justify="flex-end">
+                                <Button
+                                    onClick={onCommentSubmit}
+                                    loading={submittingComment}
+                                    disabled={!commentBody.trim()}
+                                    leftSection={<IconSend size={16} />}
+                                >
+                                    Senden
+                                </Button>
+                            </Group>
+                        </Stack>
+                    </Paper>
                 </Stack>
-            </Paper>
+            </Stack>
         </Container>
     );
 }

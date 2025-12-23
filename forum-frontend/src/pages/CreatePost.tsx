@@ -1,5 +1,5 @@
 import { useState } from 'react';
-import { useNavigate } from 'react-router-dom';
+import { Link, useNavigate } from 'react-router-dom';
 import {
     Container,
     Title,
@@ -16,18 +16,20 @@ import { IconAlertCircle, IconSend } from '@tabler/icons-react';
 import api from '../lib/api';
 import { StudyProgramSelect } from '../components/StudyProgramSelect/StudyProgramSelect';
 import { NewPost } from '../types/Blog';
+import { useSearchParams } from 'react-router-dom';
 
 export function CreatePost() {
     const [title, setTitle] = useState('');
     const [body, setBody] = useState('');
     const [shouldPublish, setShouldPublish] = useState(false);
-
     const [studyProgramId, setStudyProgramId] = useState<string | null>(null);
 
     const [loading, setLoading] = useState(false);
     const [error, setError] = useState<string | null>(null);
 
     const navigate = useNavigate();
+    const [searchParams] = useSearchParams();
+    const returnUrl = searchParams.get('returnUrl') || '/';
 
     const handleSubmit = async (e: React.FormEvent) => {
         e.preventDefault();
@@ -46,13 +48,12 @@ export function CreatePost() {
             title,
             body,
             status: shouldPublish ? 'published' : 'draft',
-            // Konvertierung: String "5" -> Number 5, oder undefined wenn null
             studyProgramId: studyProgramId ? parseInt(studyProgramId, 10) : undefined
         };
 
         try {
             await api.post('/posts', payload);
-            navigate('/'); // Bei Erfolg zur Startseite
+            navigate(returnUrl); // Bei Erfolg zur vorherigen Seite oder Startseite
         } catch (err: any) {
             console.error('Fehler beim Erstellen:', err);
             setError(
@@ -109,7 +110,7 @@ export function CreatePost() {
                         />
 
                         <Group justify="flex-end" mt="md">
-                            <Button variant="default" onClick={() => navigate('/')}>
+                            <Button variant="default" component={Link} to={returnUrl}>
                                 Abbrechen
                             </Button>
                             <Button

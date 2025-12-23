@@ -1,7 +1,7 @@
 export interface User {
     id: string;
     username: string;
-    role: 'user' | 'moderator' | 'admin';
+    role: 'user' | 'mod' | 'admin';
 }
 
 export interface UserCredentials {

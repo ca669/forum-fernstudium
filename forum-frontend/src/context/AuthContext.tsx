@@ -45,14 +45,15 @@ export function AuthProvider({ children }: { children: ReactNode }) {
         try {
             await api.post('/logout');
             setUser(null);
-            window.location.href = '/login';
         } catch (error) {
             console.error('Logout failed:', error);
         }
     };
 
     return (
-        <AuthContext.Provider value={{ user, isLoading, login, logout }}>{children}</AuthContext.Provider>
+        <AuthContext.Provider value={{ user, isLoading, login, logout }}>
+            {children}
+        </AuthContext.Provider>
     );
 }
 

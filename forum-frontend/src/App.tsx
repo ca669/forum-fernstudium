@@ -5,6 +5,8 @@ import { Home } from './pages/Home';
 import { Register } from './pages/Register';
 import { CreatePost } from './pages/CreatePost';
 import { PostDetail } from './pages/PostDetail';
+import { MyPosts } from './pages/MyPosts';
+import Admin from './pages/Admin';
 
 function App() {
     return (
@@ -16,6 +18,8 @@ function App() {
                 <Route path="/register" element={<Register />} />
                 <Route path="/create-post" element={<CreatePost />} />
                 <Route path="/posts/:id" element={<PostDetail />} />
+                <Route path="/my-posts" element={<MyPosts />} />
+                <Route path="/admin" element={<Admin />} />
             </Routes>
         </Router>
     );

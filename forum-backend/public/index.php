@@ -58,4 +58,7 @@ $authRoutes($app, $pdo);
 $blogRoutes = require __DIR__ . '/../routes/blog.php';
 $blogRoutes($app, $pdo);
 
+$adminRoutes = require __DIR__ . '/../routes/admin.php';
+$adminRoutes($app, $pdo);
+
 $app->run();

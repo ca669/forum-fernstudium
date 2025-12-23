@@ -11,11 +11,12 @@ export interface Post {
     title: string;
     body: string;
     author: string;
+    status: 'draft' | 'published';
     studyProgram?: string;
     createdAt: string;
 }
 
-export interface PostDetail extends Post {
+export interface PostDetailed extends Post {
     comments: Comment[];
 }
 
@@ -24,11 +25,11 @@ export interface Comment {
     id: number;
     text: string;
     author: string;
+    createdAt: string;
 }
 
 export interface NewComment {
     text: string;
-    postId: number;
 }
 
 // ------ Studiengang ------

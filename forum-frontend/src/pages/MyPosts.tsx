@@ -7,33 +7,33 @@ import { Post } from '../types/Blog';
 import { useAuth } from '../context/AuthContext';
 import { Link } from 'react-router-dom';
 
-export function Home() {
-    const [loading, setLoading] = useState(true);
+export function MyPosts() {
+    const [isLoading, setIsLoading] = useState(true);
     const [error, setError] = useState<string | null>(null);
     const [posts, setPosts] = useState<Post[]>([]);
 
     const { user } = useAuth();
 
     const fetchPosts = async () => {
-        setLoading(true);
+        setIsLoading(true);
         setError(null);
 
         try {
-            const response = await api.get('/posts');
+            const response = await api.get('/user/posts');
             setPosts(response.data);
         } catch (err) {
             console.error('Fehler beim Laden der Beiträge:', err);
             setError('Beiträge konnten nicht geladen werden. Bitte versuche es später erneut.');
         } finally {
-            setLoading(false);
+            setIsLoading(false);
         }
     };
 
     useEffect(() => {
         fetchPosts();
-    }, []);
+    }, [user]);
 
-    if (loading) {
+    if (isLoading) {
         return (
             <Container py="xl" style={{ display: 'flex', justifyContent: 'center' }}>
                 <Loader size="lg" />
@@ -58,7 +58,7 @@ export function Home() {
         <Container py="xl">
             <Box pos="relative" mb={40}>
                 <Title order={2} ta="center">
-                    Neueste Beiträge
+                    Meine Beiträge
                 </Title>
 
                 {user && (
@@ -66,7 +66,7 @@ export function Home() {
                         <Button
                             leftSection={<IconPlus size={16} />}
                             component={Link}
-                            to="/create-post"
+                            to="/create-post?returnUrl=/my-posts"
                         >
                             Neuer Beitrag
                         </Button>
@@ -81,7 +81,12 @@ export function Home() {
             ) : (
                 <SimpleGrid cols={{ base: 1, sm: 2, md: 3 }} spacing="lg">
                     {posts.map((post) => (
-                        <PostCard post={post} key={post.id} onUpdate={fetchPosts} />
+                        <PostCard
+                            post={post}
+                            isMyPostView={true}
+                            key={post.id}
+                            onUpdate={fetchPosts}
+                        />
                     ))}
                 </SimpleGrid>
             )}
