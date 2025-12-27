@@ -7,7 +7,7 @@ use Slim\Factory\AppFactory;
 require __DIR__ . '/../vendor/autoload.php';
 $corsMiddleware = require __DIR__ . '/../app/cors.mw.php';
 
-// Datenbank Verbindung aufbauen
+// Datenbankverbindung aufbauen
 $dbPath = __DIR__ . '/../var/forum.sqlite3';
 try {
     $pdo = new PDO("sqlite:$dbPath");
@@ -18,10 +18,10 @@ try {
     die("DB connection failed: " . $e->getMessage());
 }
 
-// Globalen JWT_SECRET definieren
+// Globale JWT_SECRET-Konstante definieren
 define('JWT_SECRET', $_ENV['JWT_SECRET'] ?? 'SECRET_KEY_DEV');
 
-// App Instanz erstellen
+// App-Instanz erstellen
 $app = AppFactory::create();
 
 $errorMiddleware = $app->addErrorMiddleware(true, true, true);
@@ -31,10 +31,10 @@ $errorMiddleware->setErrorHandler(HttpNotFoundException::class, function (Reques
     return $response->withStatus(404)->withHeader('Content-Type', 'application/json');
 });
 
-// Body Parsing Middleware hinzufügen, damit wir JSON-Daten geparsed werden.
+// Body-Parsing-Middleware hinzufügen, damit JSON-Daten geparst werden
 $app->addBodyParsingMiddleware();
 
-// CORS Middleware hinzufügen
+// CORS-Middleware hinzufügen
 $app->add($corsMiddleware);
 
 $app->options('/{routes:.+}', function ($request, $response, $args) {

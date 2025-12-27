@@ -46,6 +46,7 @@ export function Home() {
             <Container py="xl">
                 <Alert icon={<IconAlertCircle size={16} />} title="Fehler" color="red">
                     {error}
+                    <br />
                     <Button variant="outline" color="red" size="xs" mt="md" onClick={fetchPosts}>
                         Erneut versuchen
                     </Button>

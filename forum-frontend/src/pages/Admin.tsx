@@ -14,7 +14,6 @@ import {
 } from '@mantine/core';
 import { IconTrash, IconUserEdit } from '@tabler/icons-react';
 import { useAuth } from '../context/AuthContext';
-import { useNavigate } from 'react-router-dom';
 import api from '../lib/api';
 
 interface AdminUser {
@@ -26,18 +25,10 @@ interface AdminUser {
 
 export default function Admin() {
     const { user } = useAuth();
-    const navigate = useNavigate();
     const [users, setUsers] = useState<AdminUser[]>([]);
     const [loading, setLoading] = useState(true);
     const [editingUserId, setEditingUserId] = useState<number | null>(null);
     const [selectedRole, setSelectedRole] = useState<string>('');
-
-    // Redirect wenn nicht Admin oder Moderator
-    useEffect(() => {
-        if (user && user.role === 'user') {
-            navigate('/');
-        }
-    }, [user, navigate]);
 
     const fetchUsers = async () => {
         try {
@@ -103,11 +94,22 @@ export default function Admin() {
         }
     };
 
+    // Ladeanzeige während des Ladens
     if (loading) {
         return (
             <Center h="100vh">
                 <Loader size="lg" />
             </Center>
+        );
+    }
+
+    // Wenn Benutzer nicht eingeloggt oder keine Rechte hat
+    if (!user || user?.role === 'user') {
+        return (
+            <Container size="xl" py="xl">
+                <Title order={1}>Zugriff verweigert</Title>
+                <Text>Sie haben keine Berechtigung, auf diese Seite zuzugreifen.</Text>
+            </Container>
         );
     }
 

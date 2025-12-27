@@ -13,6 +13,7 @@ import {
     Stack
 } from '@mantine/core';
 import { useAuth } from '../context/AuthContext';
+import { IconAlertCircle } from '@tabler/icons-react';
 
 export function Login() {
     const [username, setUsername] = useState('');
@@ -23,7 +24,7 @@ export function Login() {
     const navigate = useNavigate();
     const { login } = useAuth();
 
-    const handleSubmit = async (e) => {
+    const handleSubmit = async (e: React.FormEvent) => {
         e.preventDefault();
         setLoading(true);
         setError('');

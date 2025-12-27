@@ -44,7 +44,7 @@ export function Register() {
                 password
             });
 
-            // 3. Bei Erfolg zum Login weiterleiten
+            // 3. Bei Erfolg zur Login-Seite weiterleiten
             navigate('/login');
         } catch (err: any) {
             setError(

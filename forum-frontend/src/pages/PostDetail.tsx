@@ -91,7 +91,7 @@ export function PostDetail() {
             const body: NewComment = { text: commentBody };
 
             await api.post(`/posts/${id}/comments`, body);
-            // Post neu laden um den neuen Kommentar anzuzeigen
+            // Post neu laden, um den neuen Kommentar anzuzeigen
             const response = await api.get(`/posts/${id}`);
             setPost(response.data);
 
@@ -99,7 +99,7 @@ export function PostDetail() {
             setCommentBody('');
         } catch (err) {
             console.error('Fehler beim Senden des Kommentars:', err);
-            // Hier könnte man noch einen Toast/Notification anzeigen
+            // Hier könnte man noch eine Toast-Benachrichtigung anzeigen
         } finally {
             setSubmittingComment(false);
         }
@@ -139,6 +139,7 @@ export function PostDetail() {
                 <Alert icon={<IconAlertCircle size={16} />} title="Fehler" color="red" mb="md">
                     {error || 'Beitrag nicht gefunden.'}
                 </Alert>
+                <br />
                 <Button leftSection={<IconArrowLeft size={16} />} component={Link} to="/">
                     Zurück zur Übersicht
                 </Button>
